@@ -74,5 +74,5 @@ for i in range(0, numero_docs()):
 
     n += 1
 
-## IMPLEMENTAR Excluir pasta vazia
+## IMPLEMENTAR Excluir pasta vazia /// Feito
 ## EFICIENCIA!
