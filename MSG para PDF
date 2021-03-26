@@ -67,7 +67,11 @@ for i in range(0, numero_docs()):
             print("Documento: " + pdf_sel)
             os.rename(pdf_sel, local_doc + '/' + documento)
             print("Documento movido para: " + local_doc)
+            os.chdir(local_doc)
+            os.rmdir(pdf_pasta)
+            print("Pasta removida: " + selecionado)
             print('')
+
     n += 1
 
 ## IMPLEMENTAR Excluir pasta vazia
