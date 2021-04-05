@@ -15,3 +15,8 @@ if ".pdf" in teste:
     print("yes")
 else:
     print("no")
+
+---
+
+Modificar o código para criar uma lista dos documentos dentro da pasta APÓS a conversão.
+A lista ignorará os PDFs.
