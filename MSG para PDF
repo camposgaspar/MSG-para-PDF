@@ -1,78 +1,85 @@
 import os
-import tkinter as tk
+from tkinter import *
 from tkinter import filedialog
+from tkinter.messagebox import *
+import subprocess
 
-root = tk.Tk()
-root.withdraw()
+class Msgpdf:
 
-print("Selecione a pasta: ")
-local_doc = filedialog.askdirectory()
-print(local_doc)
-n = 0
+	def __init__(self):
+		self.pasta_docs = ""
+		self.docs_na_pasta = []
+		self.local_trabalho = []
+		self.directs_na_pasta = []
+		self.n = 0
 
-os.chdir(local_doc)
+	def __str__(self):
+		return "{}, {}, {}".format(self.pasta_docs, self.local_trabalho, self.docs_na_pasta)
 
-lista_docs = os.listdir(local_doc)
+	def setpasta_docs(self, dic):
+		self.pasta_docs = dic
+
+	def setdocs_na_pasta(self, local):
+		self.docs_na_pasta = os.listdir(local)
+
+	def setdirects_na_pasta(self):
+		self.directs_na_pasta = [x for x in self.docs_na_pasta if ".msg" not in x]
+
+	def setlista_dir(self):
+		for i in self.directs_na_pasta:
+			self.local_trabalho.append(self.pasta_docs + "/" + i)
+
+	def direct_present(self, n):  # Irá repetir toda vez que preicisar mudar o local de trabalho para a nova pasta.
+		direct_present = self.local_trabalho[n]
+		return direct_present
+
+	def run_process(self):
+		subprocess.run("msg2pdf -d" + " " + self.pasta_docs)
+		self.setdocs_na_pasta(self.pasta_docs)
+		self.setdirects_na_pasta()
+		self.setlista_dir()
+
+		for i in self.directs_na_pasta:
+			direct_trabalho = self.direct_present(self.n)
+			
+			if ".pdf" not in direct_trabalho:
+				os.chdir(direct_trabalho)
+				print("Diretório em trabalho: ", os.getcwd())
+
+				self.setdocs_na_pasta(direct_trabalho)
+				documento = " ".join(self.docs_na_pasta)
+				print("Nome do PDF: ", documento)
+
+				documento_renomear = direct_trabalho + '/' + documento
+				os.rename(documento_renomear, self.pasta_docs + '/' + documento)
+				os.chdir(self.pasta_docs)
+				os.rmdir(direct_trabalho)
+				print("Documento movido: ", self.pasta_docs + '/' + documento)
+				print("")
+				
+			else:
+				pass
+			
+			self.n += 1
+		showinfo(title="Sucesso!", message="Sucesso! {} E-mails convertidos".format(len(self.directs_na_pasta)))
 
 
-def numero_docs():
-    x = int(len(lista_docs))
-    y = x * 6
-    return y
+if __name__ == "__main__":
+	MSGPDF = Msgpdf()
 
+	master = Tk()
+	master.geometry("600x400")
 
-os.system("msg2pdf -d " + local_doc)
+	pastaFrame = Frame(master)
+	pastaFrame.pack(expand=True)
 
-for i in range(0, numero_docs()):
-    print(n)
+	pastaLabel = Label(pastaFrame, text="Diretório de Arquivos .MSG", justify=LEFT)
+	pastaLabel.pack(side=LEFT)
 
-    os.chdir(local_doc)
-    print(local_doc)
-    print("TRABALHANDO EM: " + os.getcwd())
-    selecionado = os.listdir(local_doc)[n]
-    print("Documento selecionado: " + selecionado)
-    pdf_pasta = local_doc + "/" + selecionado
-    print("Pasta do documento: " + pdf_pasta)
+	pastaButton = Button(pastaFrame, text="Buscar", command=lambda: MSGPDF.setpasta_docs(filedialog.askdirectory()))
+	pastaButton.pack(side=RIGHT)
 
+	confirmarButton = Button(master, text="Confirmar", command=MSGPDF.run_process)
+	confirmarButton.pack(expand=True)
 
-    if selecionado.endswith('.msg'):
-        print('Documento .MSG original.')
-        print('')
-        pass
-
-    elif selecionado.endswith('.pdf'):
-        print('Documento já presente no destino.')
-        print('')
-        pass
-
-    else:
-
-        os.chdir(pdf_pasta)
-        print("TRABALHANDO EM: " + os.getcwd())
-        documentos = str(os.listdir(pdf_pasta))
-        print('documentos:' + documentos)
-        documento = documentos.replace('[', '')
-        documento = documento.replace(']', '')
-        documento = documento.replace("'", '')
-        documento = documento.replace("'", '')
-        print('documento em pdf na pasta: ' + documento)
-
-        if os.path.exists(local_doc + documento):
-            print('Já estava presente: ' + local_doc + documento)
-            print('')
-            pass
-
-        else:
-            pdf_sel = pdf_pasta + '/' + documento
-            print("Documento: " + pdf_sel)
-            os.rename(pdf_sel, local_doc + '/' + documento)
-            print("Documento movido para: " + local_doc)
-            os.chdir(local_doc)
-            os.rmdir(pdf_pasta)
-            print("Pasta removida: " + selecionado)
-            print('')
-
-    n += 1
-
-## IMPLEMENTAR Excluir pasta vazia /// Feito
-## EFICIENCIA!
+	master.mainloop()
