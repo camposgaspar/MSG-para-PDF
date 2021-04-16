@@ -3,83 +3,110 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter.messagebox import *
 import subprocess
+import shutil
+
 
 class Msgpdf:
 
-	def __init__(self):
-		self.pasta_docs = ""
-		self.docs_na_pasta = []
-		self.local_trabalho = []
-		self.directs_na_pasta = []
-		self.n = 0
+    def __init__(self):
+        self.pasta_docs = ""
+        self.docs_na_pasta = []
+        self.local_trabalho = []
+        self.directs_na_pasta = []
+        self.n = 0
+        self.direct_trabalho = ""
+        self.documento_renomear = ""
+        self.documento = ""
+        self.total_docs = []
 
-	def __str__(self):
-		return "{}, {}, {}".format(self.pasta_docs, self.local_trabalho, self.docs_na_pasta)
+    def __str__(self):
+        return "{}, {}, {}".format(self.pasta_docs, self.local_trabalho, self.docs_na_pasta)
 
-	def setpasta_docs(self, dic):
-		self.pasta_docs = dic
+    def setpasta_docs(self, dic):
+        self.pasta_docs = dic
 
-	def setdocs_na_pasta(self, local):
-		self.docs_na_pasta = os.listdir(local)
+    def setdocs_na_pasta(self, local):
+        self.docs_na_pasta = os.listdir(local)
 
-	def setdirects_na_pasta(self):
-		self.directs_na_pasta = [x for x in self.docs_na_pasta if ".msg" not in x]
+    def setdirects_na_pasta(self):
+        self.directs_na_pasta = [x for x in self.docs_na_pasta if ".msg" not in x]
+        self.total_docs = self.directs_na_pasta
 
-	def setlista_dir(self):
-		for i in self.directs_na_pasta:
-			self.local_trabalho.append(self.pasta_docs + "/" + i)
+    def setlista_dir(self):
+        for i in self.directs_na_pasta:
+            self.local_trabalho.append(self.pasta_docs + "/" + i)
 
-	def direct_present(self, n):  # Irá repetir toda vez que preicisar mudar o local de trabalho para a nova pasta.
-		direct_present = self.local_trabalho[n]
-		return direct_present
+    def direct_present(self, n):  # Irá repetir toda vez que preicisar mudar o local de trabalho para a nova pasta.
+        direct_present = self.local_trabalho[n]
+        return direct_present
 
-	def run_process(self):
-		subprocess.run("msg2pdf -d" + " " + self.pasta_docs)
-		self.setdocs_na_pasta(self.pasta_docs)
-		self.setdirects_na_pasta()
-		self.setlista_dir()
+    def remover_directs(self):
+         for i in self.directs_na_pasta:
+             if ".pdf" not in i:
+                r = self.pasta_docs + "/" + i
+                shutil.rmtree(r, ignore_errors=True)
+                print(r)
 
-		for i in self.directs_na_pasta:
-			direct_trabalho = self.direct_present(self.n)
-			
-			if ".pdf" not in direct_trabalho:
-				os.chdir(direct_trabalho)
-				print("Diretório em trabalho: ", os.getcwd())
+    def run_process(self):
+        try:
+            subprocess.run("msg2pdf -d" + " " + self.pasta_docs)
+            self.setdocs_na_pasta(self.pasta_docs)
+            self.setdirects_na_pasta()
+            self.setlista_dir()
 
-				self.setdocs_na_pasta(direct_trabalho)
-				documento = " ".join(self.docs_na_pasta)
-				print("Nome do PDF: ", documento)
+            for i in self.directs_na_pasta:
+                self.direct_trabalho = self.direct_present(self.n)
+                print(self.direct_trabalho)
 
-				documento_renomear = direct_trabalho + '/' + documento
-				os.rename(documento_renomear, self.pasta_docs + '/' + documento)
-				os.chdir(self.pasta_docs)
-				os.rmdir(direct_trabalho)
-				print("Documento movido: ", self.pasta_docs + '/' + documento)
-				print("")
-				
-			else:
-				pass
-			
-			self.n += 1
-		showinfo(title="Sucesso!", message="Sucesso! {} E-mails convertidos".format(len(self.directs_na_pasta)))
+                if ".pdf" not in self.direct_trabalho:
+                    os.chdir(self.direct_trabalho)
+                    print("Diretório em trabalho: ", os.getcwd())
+
+                    self.setdocs_na_pasta(self.direct_trabalho)
+                    print(self.docs_na_pasta)
+                    self.documento = " ".join(self.docs_na_pasta)
+                    print("Nome do PDF: ", self.documento)
+
+                    self.documento_renomear = self.direct_trabalho + '/' + self.documento
+                    try:
+                        os.rename(self.documento_renomear, self.pasta_docs + '/' + self.documento)
+                    except:
+                        continue
+                    os.chdir(self.pasta_docs)
+                    print("Documento movido: ", self.pasta_docs + '/' + self.documento)
+                    print("")
+
+                else:
+                    pass
+
+                self.n += 1
+
+        except:
+            showerror("Erro!", "Por favor, selecione um diretório.")
+        else:
+            os.chdir(self.pasta_docs)
+            self.remover_directs()
+            showinfo("Sucesso!", "Sucesso! {} E-mails convertidos.".format(len(self.total_docs)))
+            self.__init__()
+
 
 
 if __name__ == "__main__":
-	MSGPDF = Msgpdf()
+    MSGPDF = Msgpdf()
 
-	master = Tk()
-	master.geometry("600x400")
+    master = Tk()
+    master.geometry("600x400")
 
-	pastaFrame = Frame(master)
-	pastaFrame.pack(expand=True)
+    pastaFrame = Frame(master)
+    pastaFrame.pack(expand=True)
 
-	pastaLabel = Label(pastaFrame, text="Diretório de Arquivos .MSG", justify=LEFT)
-	pastaLabel.pack(side=LEFT)
+    pastaLabel = Label(pastaFrame, text="Diretório de Arquivos .MSG", justify=LEFT)
+    pastaLabel.pack(side=LEFT)
 
-	pastaButton = Button(pastaFrame, text="Buscar", command=lambda: MSGPDF.setpasta_docs(filedialog.askdirectory()))
-	pastaButton.pack(side=RIGHT)
+    pastaButton = Button(pastaFrame, text="Buscar", command=lambda: MSGPDF.setpasta_docs(filedialog.askdirectory()))
+    pastaButton.pack(side=RIGHT)
 
-	confirmarButton = Button(master, text="Confirmar", command=MSGPDF.run_process)
-	confirmarButton.pack(expand=True)
+    confirmarButton = Button(master, text="Confirmar", command=MSGPDF.run_process)
+    confirmarButton.pack(expand=True)
 
-	master.mainloop()
+    master.mainloop()
